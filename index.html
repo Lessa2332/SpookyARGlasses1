@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spooky AR Glasses | Halloween</title>
 
-    <!-- A-Frame + MindAR -->
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- Сумісні версії: A-Frame 1.4.0 + MindAR 1.2.3 -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
@@ -143,7 +143,6 @@
             embedded
             renderer="antialias: true; alpha: true;"
         >
-            <!-- 7 target entities — обов’язково від 0 до 6 -->
             <a-entity mindar-image-target="targetIndex: 0"></a-entity>
             <a-entity mindar-image-target="targetIndex: 1"></a-entity>
             <a-entity mindar-image-target="targetIndex: 2"></a-entity>
@@ -192,7 +191,6 @@
             const ghosts = [];
             const soundPlayed = new Array(7).fill(false);
 
-            // Локалізація
             if (lang === 'en') {
                 document.querySelector('#instructions h3').textContent = 'ACTIVATING GHOST VISION';
                 const ps = document.querySelectorAll('#instructions p');
@@ -207,7 +205,6 @@
                 soundToggle.textContent = 'Enable Sound';
             }
 
-            // Перевірка доступу до камери
             async function checkCameraAccess() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -225,7 +222,6 @@
                 }
             }
 
-            // Розблокування аудіо
             const unlockAudioContext = () => {
                 if (audioContextUnlocked) return;
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -241,7 +237,6 @@
             soundToggle.addEventListener('click', unlockAudioContext);
             startBtn.addEventListener('click', unlockAudioContext);
 
-            // Створення привида
             function createGhost(targetEntity, ghostId) {
                 const ghost = document.createElement('img');
                 ghost.className = 'ghost';
@@ -266,7 +261,6 @@
                 });
             }
 
-            // Відтворення звуку
             function playGhostSound(ghostId) {
                 if (!audioContextUnlocked || soundPlayed[ghostId - 1]) return;
                 const audio = new Audio(`./assets/sounds/boo${ghostId}.mp3`);
@@ -276,7 +270,6 @@
                 }).catch(e => console.warn('Audio play failed:', e));
             }
 
-            // Оновлення позицій привидів
             function updateGhosts() {
                 if (!sceneInitialized) {
                     requestAnimationFrame(updateGhosts);
@@ -354,7 +347,6 @@
                 }, 2000);
             }
 
-            // Події MindAR
             window.addEventListener('mindar-error', (e) => {
                 console.error('MindAR error:', e.detail);
                 showMessage(lang === 'uk' ? `⚠️ Помилка AR: ${e.detail.message}` : `⚠️ AR Error: ${e.detail.message}`);
@@ -374,7 +366,6 @@
                 updateGhosts();
             });
 
-            // Перевірка ресурсів
             async function checkResources() {
                 try {
                     const res = await fetch('./assets/targets/7-markers.mind');
@@ -388,7 +379,6 @@
                 }
             }
 
-            // Ініціалізація
             async function initializeApp() {
                 const hasCamera = await checkCameraAccess();
                 if (!hasCamera) return;
@@ -402,7 +392,6 @@
                 }, 1500);
             }
 
-            // Почати гру
             startBtn.addEventListener('click', () => {
                 if (!markerFileLoaded) {
                     showMessage(lang === 'uk' ? '⚠️ Файл маркерів відсутній.' : '⚠️ Marker file missing.');
@@ -421,7 +410,6 @@
                 appContainer.style.display = 'none';
             });
 
-            // Події маркерів
             document.querySelectorAll('[mindar-image-target]').forEach((el, i) => {
                 el.addEventListener('targetFound', () => {
                     visibleMarkers++;
