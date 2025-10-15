@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spooky AR Glasses | Halloween</title>
 
-    <!-- Скрипти -->
+    <!-- A-Frame + MindAR -->
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,7 +54,6 @@
             z-index: 0;
         }
 
-        /* Явне забезпечення видимості video і canvas */
         video.mindar-video, canvas {
             position: absolute;
             top: 0;
@@ -71,7 +70,8 @@
         #ui-controls {
             position: absolute; bottom: 60px;
             left: 50%;
-            transform: translateX(-50%); display: flex; gap: 10px; z-index: 100;
+            transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 100;
         }
         .spooky-btn {
             background: linear-gradient(45deg, #ff4444, #ff8800);
@@ -79,7 +79,8 @@
             border-radius: 20px;
             color: white; font-size: 14px;
             font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3); transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3);
+            transition: all 0.3s ease;
             display: none;
             text-decoration: none;
         }
@@ -142,7 +143,7 @@
             embedded
             renderer="antialias: true; alpha: true;"
         >
-            <!-- Створюємо 7 target entities -->
+            <!-- 7 target entities — обов’язково від 0 до 6 -->
             <a-entity mindar-image-target="targetIndex: 0"></a-entity>
             <a-entity mindar-image-target="targetIndex: 1"></a-entity>
             <a-entity mindar-image-target="targetIndex: 2"></a-entity>
@@ -181,15 +182,15 @@
             const hintMessage = document.getElementById('hint-message');
             const startBtn = document.getElementById('start-btn');
             const soundToggle = document.getElementById('sound-toggle');
-            
+
             let audioContextUnlocked = false;
             let sceneInitialized = false;
             let markerFileLoaded = false;
+            let gameShouldStart = false;
             const lang = navigator.language.startsWith('uk') ? 'uk' : 'en';
             let visibleMarkers = 0;
             const ghosts = [];
-            // 7 звуків
-            const soundPlayed = [false, false, false, false, false, false, false];
+            const soundPlayed = new Array(7).fill(false);
 
             // Локалізація
             if (lang === 'en') {
@@ -210,19 +211,15 @@
             async function checkCameraAccess() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    console.log('Camera access granted');
                     stream.getTracks().forEach(track => track.stop());
                     return true;
                 } catch (err) {
-                    console.error('Rear camera access denied, trying front camera:', err);
                     try {
                         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                        console.log('Front camera access granted');
                         stream.getTracks().forEach(track => track.stop());
                         return true;
                     } catch (err2) {
-                        console.error('All camera access denied:', err2);
-                        showMessage(lang === 'uk' ? '⚠️ Помилка доступу до камери. Дозвольте доступ до камери.' : '⚠️ Camera access error. Please allow camera access.');
+                        showMessage(lang === 'uk' ? '⚠️ Дозвольте доступ до камери.' : '⚠️ Please allow camera access.');
                         return false;
                     }
                 }
@@ -232,47 +229,20 @@
             const unlockAudioContext = () => {
                 if (audioContextUnlocked) return;
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) {
-                    console.warn('Web Audio API not supported');
-                    return;
-                }
-                const audioContext = new AudioContext();
-                audioContext.resume().then(() => {
-                    console.log('AudioContext unlocked');
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                ctx.resume().then(() => {
                     audioContextUnlocked = true;
                     soundToggle.textContent = lang === 'uk' ? '🔊 Звук увімкнено' : '🔊 Sound Enabled';
                     soundToggle.style.background = '#00aa55';
-                }).catch(err => console.error('AudioContext unlock failed:', err));
+                });
             };
 
             soundToggle.addEventListener('click', unlockAudioContext);
             startBtn.addEventListener('click', unlockAudioContext);
 
-            // Перевірка video елемента
-            const checkVideoElement = () => {
-                const video = document.querySelector('video.mindar-video');
-                const canvas = document.querySelector('canvas');
-                if (video && canvas) {
-                    console.log('MindAR video and canvas elements found');
-                    video.style.display = 'block';
-                    video.style.visibility = 'visible';
-                    canvas.style.display = 'block';
-                    canvas.style.visibility = 'visible';
-                    return true;
-                } else {
-                    console.warn('MindAR elements not fully loaded, retrying...');
-                    setTimeout(checkVideoElement, 500);
-                    return false;
-                }
-            };
-
+            // Створення привида
             function createGhost(targetEntity, ghostId) {
-                if (!targetEntity || !targetEntity.el || !targetEntity.el.object3D) {
-                    console.warn(`Target entity ${ghostId} not ready, retrying...`);
-                    setTimeout(() => createGhost(targetEntity, ghostId), 100); // Повторна спроба
-                    return null;
-                }
-
                 const ghost = document.createElement('img');
                 ghost.className = 'ghost';
                 ghost.src = `./assets/textures/ghost${ghostId}.png`;
@@ -281,8 +251,7 @@
                 ghost.style.display = 'none';
                 ghost.style.opacity = '0';
                 ghost.onerror = () => {
-                    console.error(`Failed to load ghost image: ${ghost.src}`);
-                    ghost.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmY0NDQ0Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRlIiBkeT0iLjNlbSI+REhPU1QgPC90ZXh0Pgo8L3N2Zz4=';
+                    ghost.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmY0NDQ0Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkdIT1NUIDwvdGV4dD4KPC9zdmc+';
                 };
                 document.body.appendChild(ghost);
 
@@ -295,65 +264,57 @@
                     offsetZ: (Math.random() - 0.5) * 0.3,
                     isVisible: false
                 });
-                return ghost;
             }
 
+            // Відтворення звуку
             function playGhostSound(ghostId) {
                 if (!audioContextUnlocked || soundPlayed[ghostId - 1]) return;
-                try {
-                    const audio = new Audio(`./assets/sounds/boo${ghostId}.mp3`);
-                    audio.volume = 0.3;
-                    audio.play().then(() => {
-                        console.log(`Played sound for ghost ${ghostId}`);
-                        soundPlayed[ghostId - 1] = true;
-                    }).catch(err => console.warn(`Audio play failed for ghost ${ghostId}:`, err));
-                } catch (err) {
-                    console.error('Audio error:', err);
-                }
+                const audio = new Audio(`./assets/sounds/boo${ghostId}.mp3`);
+                audio.volume = 0.3;
+                audio.play().then(() => {
+                    soundPlayed[ghostId - 1] = true;
+                }).catch(e => console.warn('Audio play failed:', e));
             }
 
+            // Оновлення позицій привидів
             function updateGhosts() {
-                if (!sceneInitialized || !markerFileLoaded) {
+                if (!sceneInitialized) {
                     requestAnimationFrame(updateGhosts);
                     return;
                 }
 
                 const sceneEl = document.querySelector('a-scene');
-                if (!sceneEl || !sceneEl.camera || !sceneEl.canvas) {
+                if (!sceneEl?.camera || !sceneEl?.canvas) {
                     requestAnimationFrame(updateGhosts);
                     return;
                 }
 
-                const camera = sceneEl.camera;
-                const canvas = sceneEl.canvas;
+                const { camera, canvas } = sceneEl;
 
                 ghosts.forEach(ghost => {
-                    const entity = ghost.targetEntity;
-                    if (!entity || !entity.el || !entity.el.object3D) {
+                    const { targetEntity } = ghost;
+                    if (!targetEntity?.object3D) {
                         hideGhost(ghost);
                         return;
                     }
 
-                    const worldPosition = new THREE.Vector3();
-                    entity.el.object3D.getWorldPosition(worldPosition);
+                    const pos = new THREE.Vector3();
+                    targetEntity.object3D.getWorldPosition(pos);
+                    pos.x += ghost.offsetX;
+                    pos.y += ghost.offsetY;
+                    pos.z += ghost.offsetZ;
 
-                    worldPosition.x += ghost.offsetX;
-                    worldPosition.y += ghost.offsetY;
-                    worldPosition.z += ghost.offsetZ;
+                    const v = pos.clone().project(camera);
+                    const x = (v.x * 0.5 + 0.5) * canvas.clientWidth;
+                    const y = -(v.y * 0.5 - 0.5) * canvas.clientHeight;
 
-                    const vector = worldPosition.clone().project(camera);
-                    const x = (vector.x * 0.5 + 0.5) * canvas.clientWidth;
-                    const y = -(vector.y * 0.5 - 0.5) * canvas.clientHeight;
+                    const inView = v.z > 0 && v.z < 1 &&
+                                   x > -100 && x < canvas.clientWidth + 100 &&
+                                   y > -100 && y < canvas.clientHeight + 100;
 
-                    const isInView = vector.z > 0 && vector.z < 1 && 
-                                    x > -100 && x < canvas.clientWidth + 100 && 
-                                    y > -100 && y < canvas.clientHeight + 100;
-
-                    if (isInView && entity.el.object3D.visible) {
+                    if (inView && targetEntity.object3D.visible) {
                         showGhost(ghost, x, y);
-                        if (!ghost.isVisible) {
-                            playGhostSound(ghost.ghostId);
-                        }
+                        if (!ghost.isVisible) playGhostSound(ghost.ghostId);
                         ghost.isVisible = true;
                     } else {
                         hideGhost(ghost);
@@ -365,10 +326,12 @@
             }
 
             function showGhost(ghost, x, y) {
-                ghost.element.style.display = 'block';
-                ghost.element.style.left = `${x - ghost.element.offsetWidth / 2}px`;
-                ghost.element.style.top = `${y - ghost.element.offsetHeight / 2}px`;
-                ghost.element.style.opacity = '1';
+                ghost.element.style.cssText = `
+                    display: block;
+                    left: ${x - ghost.element.offsetWidth / 2}px;
+                    top: ${y - ghost.element.offsetHeight / 2}px;
+                    opacity: 1;
+                `;
             }
 
             function hideGhost(ghost) {
@@ -381,75 +344,57 @@
             }
 
             function showMessage(text) {
-                const existingMsg = document.querySelector('.message');
-                if (existingMsg) document.body.removeChild(existingMsg);
-
-                const msg = document.createElement('div');
-                msg.className = 'message';
-                msg.textContent = text;
-                document.body.appendChild(msg);
+                const el = document.createElement('div');
+                el.className = 'message';
+                el.textContent = text;
+                document.body.appendChild(el);
                 setTimeout(() => {
-                    msg.style.opacity = '0';
-                    setTimeout(() => {
-                        if (document.body.contains(msg)) document.body.removeChild(msg);
-                    }, 400);
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 400);
                 }, 2000);
             }
 
-            // Обробка подій MindAR
-            window.addEventListener('mindar-error', (event) => {
-                console.error('MindAR Error:', event.detail);
-                showMessage(lang === 'uk' ? `⚠️ Помилка AR: ${event.detail.message}` : `⚠️ AR Error: ${event.detail.message}`);
+            // Події MindAR
+            window.addEventListener('mindar-error', (e) => {
+                console.error('MindAR error:', e.detail);
+                showMessage(lang === 'uk' ? `⚠️ Помилка AR: ${e.detail.message}` : `⚠️ AR Error: ${e.detail.message}`);
             });
 
             window.addEventListener('mindar-ready', () => {
-                console.log('MindAR initialized successfully');
+                console.log('✅ MindAR ready');
                 sceneInitialized = true;
                 showMessage(lang === 'uk' ? 'MindAR ініціалізовано!' : 'MindAR initialized!');
-                checkVideoElement();
 
-                // Створюємо привидів після готовності сцени
-                setTimeout(() => {
-                    document.querySelectorAll('[mindar-image-target]').forEach((marker, index) => {
-                        marker.dataset.ghostId = index + 1;
-                        createGhost(marker, index + 1);
+                if (gameShouldStart) {
+                    document.querySelectorAll('[mindar-image-target]').forEach((el, i) => {
+                        createGhost(el, i + 1);
                     });
-                    updateGhosts();
-                }, 500); // Затримка для стабільності
+                }
+
+                updateGhosts();
             });
 
-            // Перевірка завантаження файлів
+            // Перевірка ресурсів
             async function checkResources() {
                 try {
-                    const markerResponse = await fetch('./assets/targets/7-markers.mind');
-                    if (!markerResponse.ok) throw new Error('Marker file not found');
-                    console.log('Marker file loaded successfully');
+                    const res = await fetch('./assets/targets/7-markers.mind');
+                    if (!res.ok) throw new Error('404');
                     markerFileLoaded = true;
-
-                    // Перевіряємо 7 текстур та звуків
-                    for (let i = 1; i <= 7; i++) {
-                        const textureResponse = await fetch(`./assets/textures/ghost${i}.png`);
-                        if (!textureResponse.ok) console.warn(`Ghost texture ${i} not found`);
-                        const soundResponse = await fetch(`./assets/sounds/boo${i}.mp3`);
-                        if (!soundResponse.ok) console.warn(`Sound ${i} not found`);
-                    }
+                    console.log('✅ Marker file loaded');
                 } catch (err) {
-                    console.error('Resource loading error:', err);
-                    showMessage(lang === 'uk' ? '⚠️ Деякі ресурси не завантажились' : '⚠️ Some resources failed to load');
+                    console.error('❌ Marker file missing');
+                    showMessage(lang === 'uk' ? '⚠️ Файл маркерів не знайдено!' : '⚠️ Marker file not found!');
                     markerFileLoaded = false;
                 }
             }
 
             // Ініціалізація
             async function initializeApp() {
-                const cameraAccess = await checkCameraAccess();
-                if (!cameraAccess) return;
-                await checkResources();
+                const hasCamera = await checkCameraAccess();
+                if (!hasCamera) return;
 
-                if (!markerFileLoaded) {
-                    showMessage(lang === 'uk' ? '⚠️ Файл маркерів не знайдено! Перевірте репозиторій.' : '⚠️ Marker file not found! Check repository.');
-                    return;
-                }
+                await checkResources();
+                if (!markerFileLoaded) return;
 
                 setTimeout(() => {
                     loadingScreen.style.display = 'none';
@@ -457,18 +402,18 @@
                 }, 1500);
             }
 
-            // Запуск гри
+            // Почати гру
             startBtn.addEventListener('click', () => {
                 if (!markerFileLoaded) {
-                    showMessage(lang === 'uk' ? '⚠️ Не можу запустити AR — файл маркерів відсутній.' : '⚠️ Cannot start AR — marker file missing.');
+                    showMessage(lang === 'uk' ? '⚠️ Файл маркерів відсутній.' : '⚠️ Marker file missing.');
                     return;
                 }
-
                 instructions.style.display = 'none';
                 appContainer.style.display = 'block';
                 hintMessage.style.display = 'block';
                 infoBtn.style.display = 'block';
                 etsyBtn.style.display = 'block';
+                gameShouldStart = true;
             });
 
             infoBtn.addEventListener('click', () => {
@@ -476,26 +421,26 @@
                 appContainer.style.display = 'none';
             });
 
-            // Обробники для 7 маркерів
-            document.querySelectorAll('[mindar-image-target]').forEach((marker, index) => {
-                marker.addEventListener('targetFound', () => {
+            // Події маркерів
+            document.querySelectorAll('[mindar-image-target]').forEach((el, i) => {
+                el.addEventListener('targetFound', () => {
                     visibleMarkers++;
                     infoBtn.style.display = 'block';
                     etsyBtn.style.display = 'block';
-                    hintMessage.textContent = lang === 'uk' 
-                        ? `Магія працює! Маркер ${index + 1} активний ✨` 
-                        : `Magic active! Marker ${index + 1} found ✨`;
-                    showMessage(lang === 'uk' ? `👻 Привид з'явився! Маркер ${index + 1}` : `👻 Ghost appeared! Marker ${index + 1}`);
+                    hintMessage.textContent = lang === 'uk'
+                        ? `Магія працює! Маркер ${i + 1} активний ✨`
+                        : `Magic active! Marker ${i + 1} found ✨`;
+                    showMessage(lang === 'uk' ? `👻 Привид з'явився! Маркер ${i + 1}` : `👻 Ghost appeared! Marker ${i + 1}`);
                 });
 
-                marker.addEventListener('targetLost', () => {
+                el.addEventListener('targetLost', () => {
                     visibleMarkers = Math.max(0, visibleMarkers - 1);
-                    soundPlayed[index] = false;
+                    soundPlayed[i] = false;
                     if (visibleMarkers === 0) {
                         infoBtn.style.display = 'none';
                         etsyBtn.style.display = 'none';
-                        hintMessage.textContent = lang === 'uk' 
-                            ? "Наведіть камеру на один із семи маркерів..." 
+                        hintMessage.textContent = lang === 'uk'
+                            ? "Наведіть камеру на один із семи маркерів..."
                             : "Point your camera at one of the seven markers...";
                     }
                 });
@@ -506,4 +451,3 @@
     </script>
 </body>
 </html>
-
