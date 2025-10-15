@@ -289,6 +289,16 @@
                 console.log('✅ MindAR ready');
                 sceneInitialized = true;
                 showMessage(lang === 'uk' ? 'MindAR ініціалізовано!' : 'MindAR initialized!');
+                // Ручний запуск відео після ініціалізації
+                const video = document.querySelector('video.mindar-video');
+                if (video) {
+                    video.play().catch(e => {
+                        console.error('Video play failed:', e);
+                        showMessage(lang === 'uk' ? '⚠️ Не вдалося запустити відео. Натисніть для взаємодії.' : '⚠️ Video start failed. Tap to interact.');
+                    });
+                } else {
+                    console.error('Video element not found');
+                }
             });
 
             async function checkResources() {
@@ -329,6 +339,11 @@
                 infoBtn.style.display = 'block';
                 etsyBtn.style.display = 'block';
                 gameShouldStart = true;
+                // Додатковий запуск відео після натискання кнопки (user gesture)
+                const video = document.querySelector('video.mindar-video');
+                if (video) {
+                    video.play().catch(e => console.error('Video play failed after start:', e));
+                }
             });
 
             infoBtn.addEventListener('click', () => {
