@@ -4,8 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spooky AR Glasses | Halloween</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+    <!-- Сумісні версії: A-Frame 1.6.0 + MindAR 1.2.3 -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -15,6 +18,8 @@
             overflow: hidden;
             height: 100vh;
         }
+
+        /* Завантажувач */
         #loading-screen {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -35,6 +40,8 @@
             50% { transform: translateY(-15px) rotate(180deg); }
         }
         .loader p { color: #00ff88; font-size: 18px; margin-top: 10px; }
+
+        /* AR контейнер */
         #app-container {
             position: relative; width: 100vw; height: 100vh; display: none;
         }
@@ -46,6 +53,7 @@
             left: 0;
             z-index: 0;
         }
+
         video.mindar-video, canvas {
             position: absolute;
             top: 0;
@@ -57,6 +65,8 @@
             display: block !important;
             visibility: visible !important;
         }
+
+        /* Кнопки */
         #ui-controls {
             position: absolute; bottom: 60px;
             left: 50%;
@@ -72,11 +82,14 @@
             box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3);
             transition: all 0.3s ease;
             display: none;
+            text-decoration: none;
         }
         .spooky-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 6px 15px rgba(255, 68, 68, 0.5);
         }
+
+        /* Підказка */
         #hint-message {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.85); color: #00ff88;
@@ -85,6 +98,8 @@
             backdrop-filter: blur(8px);
             display: none;
         }
+
+        /* Повідомлення */
         .message {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0, 30, 0, 0.9); color: #00ff00;
@@ -98,12 +113,10 @@
             from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
             to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
-        .ghost {
-            position: absolute;
-            pointer-events: none;
-            z-index: 50;
+
+        /* Привиди — тепер A-Frame ентіті */
+        .ghost-entity {
             opacity: 0;
-            display: none;
             transition: opacity 0.3s ease;
         }
     </style>
@@ -116,6 +129,7 @@
         </div>
         <button id="sound-toggle" style="margin-top: 20px; padding: 10px 20px; background: #00ff88; border: none; border-radius: 5px; color: black; font-weight: bold; cursor: pointer;">Включити звук</button>
     </div>
+
     <div id="app-container">
         <a-scene 
             class="ar-scene"
@@ -125,20 +139,52 @@
             embedded
             renderer="antialias: true; alpha: true;"
         >
-            <a-entity mindar-image-target="targetIndex: 0"></a-entity>
-            <a-entity mindar-image-target="targetIndex: 1"></a-entity>
-            <a-entity mindar-image-target="targetIndex: 2"></a-entity>
-            <a-entity mindar-image-target="targetIndex: 3"></a-entity>
-            <a-entity mindar-image-target="targetIndex: 4"></a-entity>
-            <a-entity mindar-image-target="targetIndex: 5"></a-entity>
-            <a-entity mindar-image-target="targetIndex: 6"></a-entity>
+            <!-- 7 target entities -->
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-entity class="ghost-entity" id="ghost-0" position="0 0 0" scale="0.3 0.3 0.3" visible="false">
+                    <a-image src="./assets/textures/ghost1.png" width="1" height="1" transparent="true" opacity="1"></a-image>
+                </a-entity>
+            </a-entity>
+            <a-entity mindar-image-target="targetIndex: 1">
+                <a-entity class="ghost-entity" id="ghost-1" position="0 0 0" scale="0.3 0.3 0.3" visible="false">
+                    <a-image src="./assets/textures/ghost2.png" width="1" height="1" transparent="true" opacity="1"></a-image>
+                </a-entity>
+            </a-entity>
+            <a-entity mindar-image-target="targetIndex: 2">
+                <a-entity class="ghost-entity" id="ghost-2" position="0 0 0" scale="0.3 0.3 0.3" visible="false">
+                    <a-image src="./assets/textures/ghost3.png" width="1" height="1" transparent="true" opacity="1"></a-image>
+                </a-entity>
+            </a-entity>
+            <a-entity mindar-image-target="targetIndex: 3">
+                <a-entity class="ghost-entity" id="ghost-3" position="0 0 0" scale="0.3 0.3 0.3" visible="false">
+                    <a-image src="./assets/textures/ghost4.png" width="1" height="1" transparent="true" opacity="1"></a-image>
+                </a-entity>
+            </a-entity>
+            <a-entity mindar-image-target="targetIndex: 4">
+                <a-entity class="ghost-entity" id="ghost-4" position="0 0 0" scale="0.3 0.3 0.3" visible="false">
+                    <a-image src="./assets/textures/ghost5.png" width="1" height="1" transparent="true" opacity="1"></a-image>
+                </a-entity>
+            </a-entity>
+            <a-entity mindar-image-target="targetIndex: 5">
+                <a-entity class="ghost-entity" id="ghost-5" position="0 0 0" scale="0.3 0.3 0.3" visible="false">
+                    <a-image src="./assets/textures/ghost6.png" width="1" height="1" transparent="true" opacity="1"></a-image>
+                </a-entity>
+            </a-entity>
+            <a-entity mindar-image-target="targetIndex: 6">
+                <a-entity class="ghost-entity" id="ghost-6" position="0 0 0" scale="0.3 0.3 0.3" visible="false">
+                    <a-image src="./assets/textures/ghost7.png" width="1" height="1" transparent="true" opacity="1"></a-image>
+                </a-entity>
+            </a-entity>
         </a-scene>
+
         <div id="ui-controls">
             <button id="info-btn" class="spooky-btn">ℹ️ Інфо</button>
             <a href="https://smartlessa.etsy.com" target="_blank" id="etsy-btn" class="spooky-btn">🛒 Відвідати Smartlessa</a>
         </div>
-        <div id="hint-message" role="alert">Наведіть камеру на один із семи маркерів...</div>
+
+        <div id="hint-message">Наведіть камеру на один із семи маркерів...</div>
     </div>
+
     <div id="instructions" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: white; padding: 20px; border-radius: 10px; z-index: 1000; text-align: center; max-width: 80%;">
         <h3>АКТИВАЦІЯ ПРИВІДОБАЧЕННЯ</h3>
         <p>• Наведіть камеру на один із семи маркерів</p>
@@ -149,6 +195,7 @@
             Почати гру
         </button>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const loadingScreen = document.getElementById('loading-screen');
@@ -183,12 +230,6 @@
                 soundToggle.textContent = 'Enable Sound';
             }
 
-            // Перевірка підтримки WebGL та Web Audio API
-            if (!('WebGLRenderingContext' in window) || !('AudioContext' in window)) {
-                showMessage(lang === 'uk' ? '⚠️ Ваш браузер не підтримує WebAR.' : '⚠️ Your browser does not support WebAR.');
-                return;
-            }
-
             async function checkCameraAccess() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -221,98 +262,19 @@
             soundToggle.addEventListener('click', unlockAudioContext);
             startBtn.addEventListener('click', unlockAudioContext);
 
-            function createGhost(targetEntity, ghostId) {
-                const ghost = document.createElement('img');
-                ghost.className = 'ghost';
-                ghost.src = `./assets/textures/ghost${ghostId}.png`;
-                ghost.alt = lang === 'uk' ? `Привид ${ghostId}` : `Ghost ${ghostId}`; // Доступність
-                ghost.style.width = `${60 + Math.random() * 80}px`;
-                ghost.style.height = 'auto';
-                ghost.style.display = 'none';
-                ghost.style.opacity = '0';
-                ghost.onerror = () => {
-                    ghost.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmY0NDQ0Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkdIT1NUIDwvdGV4dD4KPC9zdmc+';
-                };
-                document.body.appendChild(ghost);
-                return { element: ghost, targetEntity, ghostId, offsetX: (Math.random() - 0.5) * 0.3, offsetY: 0.1 + Math.random() * 0.2, offsetZ: (Math.random() - 0.5) * 0.3, isVisible: false };
-            }
-
+            // Функція для відтворення звуку
             function playGhostSound(ghostId) {
                 if (!audioContextUnlocked || soundPlayed[ghostId - 1]) return;
                 const audio = new Audio(`./assets/sounds/boo${ghostId}.mp3`);
                 audio.volume = 0.3;
-                audio.play().catch(e => console.warn('Audio play failed:', e));
-                soundPlayed[ghostId - 1] = true;
+                audio.play().then(() => {
+                    soundPlayed[ghostId - 1] = true;
+                }).catch(e => console.warn('Audio play failed:', e));
             }
 
-            function updateGhosts() {
-                if (!sceneInitialized) return;
-                const sceneEl = document.querySelector('a-scene');
-                if (!sceneEl?.camera || !sceneEl?.canvas) return;
-
-                const { camera, canvas } = sceneEl;
-                ghosts.forEach(ghost => {
-                    const { targetEntity } = ghost;
-                    if (!targetEntity?.object3D) {
-                        hideGhost(ghost);
-                        return;
-                    }
-                    const pos = new THREE.Vector3();
-                    targetEntity.object3D.getWorldPosition(pos);
-                    pos.x += ghost.offsetX;
-                    pos.y += ghost.offsetY;
-                    pos.z += ghost.offsetZ;
-
-                    const v = pos.clone().project(camera);
-                    const x = (v.x * 0.5 + 0.5) * canvas.clientWidth;
-                    const y = -(v.y * 0.5 - 0.5) * canvas.clientHeight;
-
-                    const inView = v.z > 0 && v.z < 1 &&
-                                   x > -100 && x < canvas.clientWidth + 100 &&
-                                   y > -100 && y < canvas.clientHeight + 100;
-
-                    if (inView && targetEntity.object3D.visible) {
-                        showGhost(ghost, x, y);
-                        if (!ghost.isVisible) playGhostSound(ghost.ghostId);
-                        ghost.isVisible = true;
-                    } else {
-                        hideGhost(ghost);
-                        ghost.isVisible = false;
-                    }
-                });
-                requestAnimationFrame(updateGhosts);
-            }
-
-            function showGhost(ghost, x, y) {
-                ghost.element.style.cssText = `
-                    display: block;
-                    left: ${x - ghost.element.offsetWidth / 2}px;
-                    top: ${y - ghost.element.offsetHeight / 2}px;
-                    opacity: 1;
-                `;
-            }
-
-            function hideGhost(ghost) {
-                ghost.element.style.opacity = '0';
-                setTimeout(() => {
-                    if (ghost.element.style.opacity === '0') ghost.element.style.display = 'none';
-                }, 300);
-            }
-
-            function showMessage(text) {
-                const el = document.createElement('div');
-                el.className = 'message';
-                el.textContent = text;
-                el.setAttribute('role', 'alert'); // Доступність
-                document.body.appendChild(el);
-                setTimeout(() => {
-                    el.style.opacity = '0';
-                    setTimeout(() => el.remove(), 400);
-                }, 2000);
-            }
-
+            // Події MindAR
             window.addEventListener('mindar-error', (e) => {
-                console.error('MindAR error:', e.detail.message);
+                console.error('MindAR error:', e.detail);
                 showMessage(lang === 'uk' ? `⚠️ Помилка AR: ${e.detail.message}` : `⚠️ AR Error: ${e.detail.message}`);
             });
 
@@ -320,12 +282,14 @@
                 console.log('✅ MindAR ready');
                 sceneInitialized = true;
                 showMessage(lang === 'uk' ? 'MindAR ініціалізовано!' : 'MindAR initialized!');
+
                 if (gameShouldStart) {
-                    document.querySelectorAll('[mindar-image-target]').forEach((el, i) => {
-                        ghosts.push(createGhost(el, i + 1));
+                    // Активуємо привидів при запуску гри
+                    document.querySelectorAll('.ghost-entity').forEach((el, i) => {
+                        el.setAttribute('visible', 'true');
+                        el.setAttribute('opacity', '1');
                     });
                 }
-                updateGhosts();
             });
 
             async function checkResources() {
@@ -336,10 +300,8 @@
                     console.log('✅ Marker file loaded');
                 } catch (err) {
                     console.error('❌ Marker file missing');
-                    showMessage(lang === 'uk' ? '⚠️ Файл маркерів не знайдено! Використовуйте резервне зображення.' : '⚠️ Marker file not found! Using fallback image.');
+                    showMessage(lang === 'uk' ? '⚠️ Файл маркерів не знайдено!' : '⚠️ Marker file not found!');
                     markerFileLoaded = false;
-                    // Fallback: показати статичне зображення
-                    document.body.innerHTML += '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNDQ0NCIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U29ycnkhPC90ZXh0Pjwvc3ZnPg==" alt="Fallback image" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);">';
                 }
             }
 
@@ -367,11 +329,6 @@
                 infoBtn.style.display = 'block';
                 etsyBtn.style.display = 'block';
                 gameShouldStart = true;
-                if (sceneInitialized) {
-                    document.querySelectorAll('[mindar-image-target]').forEach((el, i) => {
-                        ghosts.push(createGhost(el, i + 1));
-                    });
-                }
             });
 
             infoBtn.addEventListener('click', () => {
@@ -379,6 +336,7 @@
                 appContainer.style.display = 'none';
             });
 
+            // Події маркерів
             document.querySelectorAll('[mindar-image-target]').forEach((el, i) => {
                 el.addEventListener('targetFound', () => {
                     visibleMarkers++;
@@ -388,6 +346,9 @@
                         ? `Магія працює! Маркер ${i + 1} активний ✨`
                         : `Magic active! Marker ${i + 1} found ✨`;
                     showMessage(lang === 'uk' ? `👻 Привид з'явився! Маркер ${i + 1}` : `👻 Ghost appeared! Marker ${i + 1}`);
+
+                    // Відтворюємо звук при знаходженні маркера
+                    playGhostSound(i + 1);
                 });
 
                 el.addEventListener('targetLost', () => {
@@ -408,3 +369,4 @@
     </script>
 </body>
 </html>
+
